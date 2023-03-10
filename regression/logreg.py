@@ -50,7 +50,9 @@ class BaseRegressor():
             y_train = shuffle_arr[:, -1].flatten()
 
             # Create batches
-            num_batches = int(X_train.shape[0] / self.batch_size) + 1
+            #edited by JHB
+            #the original implementation with int() did not work where the input size equalled the batch size
+            num_batches = np.ceil(X_train.shape[0] / self.batch_size) # + 1
             X_batch = np.array_split(X_train, num_batches)
             y_batch = np.array_split(y_train, num_batches)
 
@@ -68,6 +70,8 @@ class BaseRegressor():
                 # Update weights
                 prev_W = self.W
                 grad = self.calculate_gradient(y_train, X_train)
+                #print(self.W)
+                #print(self.lr*grad)
                 new_W = prev_W - self.lr * grad 
                 self.W = new_W
 
@@ -83,7 +87,12 @@ class BaseRegressor():
 
             # Update iteration
             iteration += 1
-    
+
+        if prev_update_size <= self.tol:
+            print("tolerance reached")
+        elif iteration >= self.max_iter:
+            print("maximum iteration reached")
+
     def plot_loss_history(self):
 
         # Make sure training has been run
@@ -129,8 +138,15 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The predicted labels (y_pred) for given X.
         """
-        pass
-    
+
+        #print("-----------making prediction-----------")
+        #print(X)
+        #print(self.W)
+
+        z = np.matmul(X, self.W)
+
+        return [1/(1+np.exp(-i)) for i in z]
+
     def loss_function(self, y_true, y_pred) -> float:
         """
         TODO: Implement binary cross entropy loss, which assumes that the true labels are either
@@ -143,8 +159,20 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The mean loss (a single number).
         """
-        pass
-        
+
+        #print("-----------calculating loss-----------")
+        #print(y_true)
+        #print(y_pred)
+
+        n = y_true.shape[0]
+
+        #print(sum([y_true[x]*np.log(y_pred[x]) + (1-y_true[x])*(1-np.log(y_pred[x])) for x in range(n)])/n)
+
+        #compute the binary cross entropy loss function. First term is added for true observations, second term is added for false ones.
+        bce_loss = sum([y_true[x]*np.log(y_pred[x]) + (1-y_true[x])*(np.log(1-y_pred[x])) for x in range(n)])/n
+
+        return bce_loss
+
     def calculate_gradient(self, y_true, X) -> np.ndarray:
         """
         TODO: Calculate the gradient of the loss function with respect to the given data. This
@@ -157,4 +185,38 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             Vector of gradients.
         """
-        pass
+
+        #dividing by y_true.shape[0] should make the learning rate choice less sensitive to batch size
+        return np.matmul(self.make_prediction(X)-y_true, X)/y_true.shape[0]
+
+
+#testing
+
+#parameters
+n_obs = 100
+n_obs_train = 60
+m = .1
+dispersion = 0.1
+
+#initialize objects
+#lreg = LogisticRegressor(1, learning_rate = 1, tol = .01, max_iter=400)
+
+#generate data
+x_true = np.array(np.random.rand(n_obs))
+y_true = np.array([np.round(i + m + np.random.randn()*dispersion) for i in x_true])
+
+#print training data
+#plt.scatter(x_true, y_true)
+#plt.show()
+
+#reformat input
+x_true = x_true.reshape(n_obs, 1)
+
+#fit model
+#lreg.train_model(x_true[0:n_obs_train], y_true[0:n_obs_train], x_true[n_obs_train:], y_true[n_obs_train:])
+
+#lreg.plot_loss_history()
+
+
+
+
