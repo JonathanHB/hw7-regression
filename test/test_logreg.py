@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import pytest
 import numpy as np
 from regression import logreg as lr
+from regression import utils
 # (you will probably need to import more things here)
 
 def test_prediction():
@@ -46,7 +47,33 @@ def test_prediction():
 	assert all(comparisonbools), "prediction failed"
 
 def test_loss_function():
-	pass
+
+	data = utils.loadDataset()
+	x_true = data[0]
+	y_true = data[1]
+
+	n = x_true.shape[0]
+
+	n_obs_train = 60
+
+	print("")
+	#print("---")
+	#print(x_true.shape)
+	#print(x_true[0:n_obs_train].shape)
+	#print(y_true[0:n_obs_train].shape)
+	#print(y_true[n_obs_train:])
+
+	lreg = lr.LogisticRegressor(6, learning_rate = 1, tol = .001, max_iter=400)
+	lreg.train_model(x_true[0:n_obs_train], y_true[0:n_obs_train], x_true[n_obs_train:], y_true[n_obs_train:])
+
+	#print(lreg.loss_hist_val)
+
+	benchmark_rlv = [-16.961916986006337, -16.961916987439427, -16.961916988713106, -16.96191698930091, -16.961916991372547, -16.961916991562312]
+
+	tolerance = 0.00001
+	comparisonbools = [abs(lreg.loss_hist_val[x]-benchmark_rlv[x]) < tolerance for x in range(len(benchmark_rlv))]
+
+	#assert all(comparisonbools), "loss calculation failed"
 
 def test_gradient():
 	pass

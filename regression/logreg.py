@@ -32,6 +32,17 @@ class BaseRegressor():
     
     def train_model(self, X_train, y_train, X_val, y_val):
 
+        n_train = X_train.shape[0]
+        n_feat = X_train.shape[1]
+        rescale_factors = [np.sqrt(np.mean(X_train[:,i]**2)) for i in range(n_feat)]
+        print(rescale_factors)
+        print(self.W)
+        #rescale_tol = 0.0001
+        for i in range(n_feat):
+            self.W[i] = self.W[i]/(1 + rescale_factors[i])
+        print(self.W)
+        print("----------------------------------------")
+
         # Padding data with vector of ones for bias term
         X_train = np.hstack([X_train, np.ones((X_train.shape[0], 1))])
         X_val = np.hstack([X_val, np.ones((X_val.shape[0], 1))])
@@ -61,9 +72,10 @@ class BaseRegressor():
 
             # Iterate through batches (one of these loops is one epoch of training)
             for X_train, y_train in zip(X_batch, y_batch):
-
+                print("---------------------------")
                 # Make prediction and calculate loss
                 y_pred = self.make_prediction(X_train)
+                print(y_pred)
                 train_loss = self.loss_function(y_train, y_pred)
                 self.loss_hist_train.append(train_loss)
 
@@ -71,7 +83,7 @@ class BaseRegressor():
                 prev_W = self.W
                 grad = self.calculate_gradient(y_train, X_train)
                 #print(self.W)
-                #print(self.lr*grad)
+                #print(grad)
                 new_W = prev_W - self.lr * grad 
                 self.W = new_W
 
@@ -80,6 +92,11 @@ class BaseRegressor():
 
                 # Compute validation loss
                 val_loss = self.loss_function(y_val, self.make_prediction(X_val))
+                #print(X_val[0])
+                #print(self.W)
+                #print(np.matmul(X_val, self.W))
+                #print(self.make_prediction(X_val))
+                #print(val_loss)
                 self.loss_hist_val.append(val_loss)
 
             # Define step size as the average parameter update over the past epoch
@@ -169,7 +186,7 @@ class LogisticRegressor(BaseRegressor):
         #print(sum([y_true[x]*np.log(y_pred[x]) + (1-y_true[x])*(1-np.log(y_pred[x])) for x in range(n)])/n)
 
         #compute the binary cross entropy loss function. First term is added for true observations, second term is added for false ones.
-        bce_loss = sum([y_true[x]*np.log(y_pred[x]) + (1-y_true[x])*(np.log(1-y_pred[x])) for x in range(n)])/n
+        bce_loss = -sum([y_true[x]*np.log(y_pred[x]) + (1-y_true[x])*(np.log(1-y_pred[x])) for x in range(n)])/n
 
         return bce_loss
 
@@ -190,32 +207,52 @@ class LogisticRegressor(BaseRegressor):
         return np.matmul(self.make_prediction(X)-y_true, X)/y_true.shape[0]
 
 
+print("test")
 #testing
+import utils
+data = utils.loadDataset()
+x_true = data[0]
+y_true = data[1]
 
-#parameters
-n_obs = 100
+n = x_true.shape[0]
+
 n_obs_train = 60
-m = .1
-dispersion = 0.1
 
-#initialize objects
-#lreg = LogisticRegressor(1, learning_rate = 1, tol = .01, max_iter=400)
+#print("")
+# print("---")
+# print(x_true.shape)
+# print(x_true[0:n_obs_train].shape)
+# print(y_true[0:n_obs_train].shape)
+# print(y_true[n_obs_train:])
 
-#generate data
-x_true = np.array(np.random.rand(n_obs))
-y_true = np.array([np.round(i + m + np.random.randn()*dispersion) for i in x_true])
+lreg = LogisticRegressor(6, learning_rate=1, tol=.001, max_iter=400)
+lreg.train_model(x_true[0:n_obs_train], y_true[0:n_obs_train], x_true[n_obs_train:], y_true[n_obs_train:])
 
-#print training data
-#plt.scatter(x_true, y_true)
-#plt.show()
 
-#reformat input
-x_true = x_true.reshape(n_obs, 1)
-
-#fit model
-#lreg.train_model(x_true[0:n_obs_train], y_true[0:n_obs_train], x_true[n_obs_train:], y_true[n_obs_train:])
-
-#lreg.plot_loss_history()
+# #parameters
+# n_obs = 100
+# n_obs_train = 60
+# m = .1
+# dispersion = 0.1
+#
+# #initialize objects
+# #lreg = LogisticRegressor(1, learning_rate = 1, tol = .01, max_iter=400)
+#
+# #generate data
+# x_true = np.array(np.random.rand(n_obs))
+# y_true = np.array([np.round(i + m + np.random.randn()*dispersion) for i in x_true])
+#
+# #print training data
+# #plt.scatter(x_true, y_true)
+# #plt.show()
+#
+# #reformat input
+# x_true = x_true.reshape(n_obs, 1)
+#
+# #fit model
+# #lreg.train_model(x_true[0:n_obs_train], y_true[0:n_obs_train], x_true[n_obs_train:], y_true[n_obs_train:])
+#
+# #lreg.plot_loss_history()
 
 
 
